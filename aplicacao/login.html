@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acesso - TestLab Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root {
+    --primary: #1a73e8;
+    --primary-hover: #1557b0;
+    --bg-main: #f8fafc;
+    --text-muted: #64748b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); display: flex; justify-content: center; align-items: center; height: 100vh; }
+  .login-card { width: 100%; max-width: 400px; padding: 2.5rem; background: white; border-radius: var(--radius); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+  h2 { color: var(--primary); font-weight: 700; margin-bottom: 0.5rem; text-align: center; }
+  p { color: var(--text-muted); font-size: 0.875rem; text-align: center; margin-bottom: 2rem; }
+  .input-group { margin-bottom: 1.25rem; }
+  label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; }
+  input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0; font-family: inherit; outline: none; transition: border-color 0.2s; }
+  input:focus { border-color: var(--primary); }
+  button { width: 100%; padding: 0.75rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 1rem; }
+  button:hover { background: var(--primary-hover); }
+  .alert { padding: 0.75rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.875rem; display: none; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+</style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>::TestLab::</h2>
+    <p>Dashboard de Monitoramento</p>
+
+    <div id="login-alert" class="alert"></div>
+    <div class="input-group">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="input-group">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button onclick="handleLogin()"><i data-lucide="log-in"></i> Entrar no Sistema</button>
+    <div style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted);">
+      Acesso restrito a usuários autorizados
+      
+    </div>
+       <div style="text-align: center; margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted);">
+       Univesp :: PI5 - Projeto Integrador - 2026
+  </p>
+      
+    </div>
+  </div>
+
+<script>
+  lucide.createIcons();
+
+  // Se já estiver logado, vai direto pro dashboard
+  if (localStorage.getItem('token')) {
+    window.location.href = 'index.html';
+  }
+
+  async function handleLogin() {
+    const user = document.getElementById('login-user').value;
+    const pass = document.getElementById('login-pass').value;
+    const alertEl = document.getElementById('login-alert');
+    const btn = document.querySelector('button');
+
+    if (!user || !pass) {
+      alertEl.textContent = "Preencha todos os campos.";
+      alertEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Autenticando...";
+
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+      
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', user);
+        window.location.href = 'index.html';
+      } else {
+        alertEl.textContent = data.error || "Erro ao entrar.";
+        alertEl.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="log-in"></i> Entrar no Sistema';
+        lucide.createIcons();
+      }
+    } catch (e) {
+      alertEl.textContent = "Não foi possível conectar ao servidor.";
+      alertEl.style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="log-in"></i> Entrar no Sistema';
+      lucide.createIcons();
+    }
+  }
+
+  // Atalho Enter
+  document.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+</script>
+</body>
+</html>

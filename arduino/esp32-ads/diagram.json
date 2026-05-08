@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "author": "Wilton Loiola",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-s2-devkitm-1", "id": "esp", "top": 24.49, "left": 71.77, "attrs": {} },
+    { "type": "chip-ads1115-adc", "id": "chip1", "top": -162.18, "left": 264, "attrs": {} },
+    {
+      "type": "board-ssd1306",
+      "id": "oled1",
+      "top": 204.74,
+      "left": 470.63,
+      "attrs": { "i2cAddress": "0x3c" }
+    },
+    {
+      "type": "chip-acs758lcb",
+      "id": "chip2",
+      "top": -142.98,
+      "left": 580.8,
+      "attrs": { "currentA": "4.0", "vccVolts": "3.3", "zeroCurrentV": "1.65", "sensitivityMvPerA": "40" }
+    },
+    {
+      "type": "chip-lm2596-display",
+      "id": "chip3",
+      "top": 87.42,
+      "left": 523.2,
+      "attrs": {
+        "vinVolts": "12",
+        "vsetVolts": "5",
+        "loadCurrentA": "4.0",
+        "currentLimitA": "6.0",
+        "powerOn": "1",
+        "maxDisplayVolts": "30",
+        "maxDisplayCurrent": "10",
+        "dropoutVolts": "1.2"
+      }
+    },
+    {
+      "type": "chip-psu-12v16a-health",
+      "id": "chip4",
+      "top": 10,
+      "left": 690,
+      "attrs": {
+        "nominalVolts": "12.0",
+        "loadCurrentA": "4.0",
+        "healthPercent": "100",
+        "rippleMv": "40",
+        "powerOn": "1",
+        "maxCurrentA": "16.0",
+        "vmonFullScale": "15.0",
+        "imonFullScale": "16.0",
+        "internalResistancemOhm": "60"
+      }
+    },
+    {
+      "type": "wokwi-ds18b20",
+      "id": "temp1",
+      "top": -9.6,
+      "left": -48,
+      "attrs": { "temperature": "34", "deviceID": "12AB34CD56EF" }
+    },
+    {
+      "type": "wokwi-mpu6050",
+      "id": "mpu1",
+      "top": -133.2,
+      "left": 110.4,
+      "attrs": {
+        "accelX": "0",
+        "accelY": "0",
+        "accelZ": "1",
+        "rotationX": "0",
+        "rotationY": "0",
+        "rotationZ": "0",
+        "temperature": "30"
+      }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "chip1:VCC", "esp:3V3", "red", [ "h-240", "v259.2", "h9.6" ] ],
+    [ "chip1:GND", "esp:GND.1", "black", [ "h-432", "v259.2" ] ],
+    [ "chip1:SCL", "esp:20", "blue", [ "h-48", "v230.4", "h-67.2" ] ],
+    [ "chip1:SDA", "esp:21", "green", [ "h-57.6", "v211.2" ] ],
+    [ "chip1:ENDERECO", "esp:GND.1", "black", [ "h-412.8", "v230.4" ] ],
+    [ "chip1:A0", "chip4:VMON", "orange", [ "h120", "v120", "h160" ] ],
+    [ "chip1:A1", "chip4:IMON", "yellow", [ "h150", "v100", "h160" ] ],
+    [ "chip1:A2", "chip3:VMON", "brown", [ "h100", "v180", "h60" ] ],
+    [ "chip1:A3", "chip2:VIOUT", "purple", [ "h120", "v40" ] ],
+    [ "oled1:GND", "esp:GND.1", "black", [ "v-19.2", "h-48", "v144", "h-220.8", "v-48" ] ],
+    [ "oled1:VCC", "esp:3V3", "red", [ "v-38.4", "h-76.65", "v144", "h-211.2", "v-38.4" ] ],
+    [ "oled1:SCL", "esp:20", "blue", [ "v-57.6", "h-95.7", "v115.2" ] ],
+    [ "oled1:SDA", "esp:21", "green", [ "v-67.2", "h-134.33", "v115.2", "h-9.6" ] ],
+    [ "chip2:VCC", "esp:3V3", "red", [ "h-90", "v180" ] ],
+    [ "chip2:GND", "esp:GND.1", "black", [ "h-140", "v220" ] ],
+    [ "chip3:GND", "esp:GND.1", "black", [ "h-100", "v230" ] ],
+    [ "chip3:CC", "esp:4", "purple", [ "h-150", "v90", "h-120" ] ],
+    [ "chip4:GND", "esp:GND.1", "black", [ "h-300", "v240" ] ],
+    [ "chip4:PGOOD", "esp:5", "green", [ "h-250", "v120", "h-310" ] ],
+    [ "temp1:VCC", "esp:3V3", "red", [ "h42", "v80", "h86" ] ],
+    [ "temp1:GND", "esp:GND.1", "black", [ "h70", "v180", "h90" ] ],
+    [ "temp1:DQ", "esp:6", "cyan", [ "h58", "v110", "h70" ] ],
+    [ "mpu1:VCC", "esp:3V3", "red", [ "h-60", "v200", "h-95" ] ],
+    [ "mpu1:GND", "esp:GND.1", "black", [ "h-90", "v250", "h-120" ] ],
+    [ "mpu1:SCL", "esp:20", "blue", [ "h-100", "v180", "h-55" ] ],
+    [ "mpu1:SDA", "esp:21", "green", [ "h-120", "v160", "h-70" ] ],
+    [ "chip4:VOUT", "chip2:IP+", "red", [ "h-80", "v40" ] ],
+    [ "chip2:IP-", "chip3:VIN", "red", [ "h-60", "v80", "h-80", "v40" ] ],
+    [ "chip3:VOUT", "esp:5V", "red", [ "h-200", "v150" ] ]
+  ],
+  "dependencies": {}
+}

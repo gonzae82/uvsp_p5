@@ -1,0 +1,26 @@
+{
+  "name": "(ADC) ADS1115",
+  "author": "Wilton",
+  "pins": [
+    "VCC",
+    "GND",
+    "SCL",
+    "SDA",
+    "ENDERECO",
+    "ALRT",
+    "A0",
+    "A1",
+    "A2",
+    "A3",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "controls": []
+}

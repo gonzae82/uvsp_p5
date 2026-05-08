@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - TestLab ThingSpeak</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root {
+    --primary: #1a73e8;
+    --primary-hover: #1557b0;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --radius: 12px;
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); line-height: 1.5; display: none; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+  .brand h1 { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+  .brand p { font-size: 0.875rem; color: var(--text-muted); }
+
+  .toolbar { display: flex; gap: 0.75rem; align-items: center; }
+  button { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: white; color: var(--text-main); border-color: var(--border); }
+
+  .card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+  .card-title { font-size: 1rem; font-weight: 600; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+
+  .input-group { margin-bottom: 1rem; }
+  .input-group label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.375rem; }
+  input { width: 100%; padding: 0.625rem; border-radius: 8px; border: 1px solid var(--border); font-family: inherit; font-size: 0.875rem; outline: none; }
+  input:focus { border-color: var(--primary); }
+
+  .tab-btn { background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); padding: 0.75rem 1rem; font-weight: 600; cursor: pointer; }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab-btn:hover { background: #f1f5f9; }
+
+  .period-selector { display: flex; background: #f1f5f9; padding: 2px; border-radius: 8px; gap: 2px; }
+  .btn-time { padding: 4px 12px; font-size: 0.75rem; font-weight: 600; border: none; background: transparent; color: var(--text-muted); border-radius: 6px; cursor: pointer; }
+  .btn-time.active { background: white; color: var(--primary); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+  .metric-card { background: var(--bg-card); padding: 1.25rem; border-radius: var(--radius); border: 1px solid var(--border); transition: transform 0.2s; }
+  .metric-card:hover { transform: translateY(-2px); }
+  .metric-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+  .metric-value { font-size: 1.75rem; font-weight: 700; color: var(--text-main); display: flex; align-items: baseline; gap: 0.25rem; }
+
+  .status-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-right: 0.5rem; }
+  .status-ok { background: #dcfce7; color: #166534; }
+  .status-warn { background: #fef9c3; color: #854d0e; }
+  .status-err { background: #fee2e2; color: #991b1b; }
+  .status-none { background: #f1f5f9; color: #475569; }
+
+  .chart-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+  @media (max-width: 1024px) { .chart-container { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; min-height: 350px; }
+  .chart-card.wide { grid-column: 1 / -1; }
+  canvas { width: 100% !important; max-height: 300px; }
+
+  .info-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 0.75rem 1rem; background: white; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th { text-align: left; background: var(--bg-main); padding: 0.75rem; font-weight: 600; color: var(--text-muted); }
+  td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+  
+  details { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; overflow: hidden; }
+  summary { padding: 1rem; font-weight: 600; cursor: pointer; background: #fcfdfe; }
+  .details-content { padding: 1rem; border-top: 1px solid var(--border); }
+
+  .alert { padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; display: none; }
+  .alert-error { background: #fee2e2; color: #991b1b; }
+  .alert-success { background: #dcfce7; color: #166534; }
+</style>
+</head>
+<body onload="checkAuth()">
+  <div class="container">
+    <header>
+      <div class="brand">
+        <h1>Monitoramento de Sensores</h1>
+        <p>Univesp::PI5 :: <span id="currentUserDisplay"></span></p>
+      </div>
+      <div class="toolbar">
+        <button class="btn-secondary" onclick="handleLogout()"><i data-lucide="log-out"></i> Sair</button>
+        <div id="statusAuto" style="font-size: 0.75rem; color: var(--text-muted); margin-left: 1rem;">Manual</div>
+        <button class="btn-secondary" onclick="alternarAutoAtualizacao()" id="btnAuto"><i data-lucide="refresh-cw"></i></button>
+        <button class="btn-primary" onclick="lerDadosCanais()"><i data-lucide="play"></i></button>
+      </div>
+    </header>
+
+    <div class="info-bar">
+      <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+        <span id="ultimaAtualizacao">Aguardando primeira leitura...</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span id="apiStatusCloud" class="status-badge status-none" title="Conexão com ThingSpeak">CLOUD: --</span>
+          <span id="apiStatusLocal" class="status-badge status-none" title="Sincronização Cloud -> DB">SYNC: --</span>
+          <span id="apiStatusData" class="status-badge status-none" title="Atividade do Sensor">SENSOR: --</span>
+          <span id="dbStats" style="font-weight: 600; color: var(--primary);">DB: --</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; width: 100%; font-size: 0.7rem; opacity: 0.8;">
+        <div style="display: flex; gap: 15px;">
+          <span id="dataSensor">Sensor (Cloud): --</span>
+          <span id="dataSensorDB" style="color: var(--primary); font-weight: 500;">Sensor (no DB): --</span>
+        </div>
+        <span id="resumoPainel">Conexão pendente</span>
+      </div>
+    </div>
+
+    <!-- Navegação -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border);">
+      <button class="tab-btn active" onclick="switchTab('dashboard')" id="tab-dashboard">Dashboard</button>
+      <button class="tab-btn" onclick="switchTab('history')" id="tab-history">Histórico</button>
+      <button class="tab-btn" onclick="switchTab('raw')" id="tab-raw">Dados Brutos</button>
+      <button class="tab-btn" onclick="switchTab('config')" id="tab-config">Configurações</button>
+      <button class="tab-btn" onclick="switchTab('admin')" id="tab-admin">Criar Usuário</button>
+    </div>
+
+    <div id="content-dashboard">
+      <div class="metric-grid">
+        <div class="metric-card"><div class="metric-label">Saúde da Fonte</div><div class="metric-value" id="healthAtual">--%</div><div style="font-size:0.7rem; color:var(--text-muted)">Indicador geral</div></div>
+        <div class="metric-card"><div class="metric-label">Tensão da Fonte</div><div class="metric-value" id="vFonteAtual">--V</div><div style="font-size:0.7rem; color:var(--text-muted)">Canal 1</div></div>
+        <div class="metric-card"><div class="metric-label">Corrente da Fonte</div><div class="metric-value" id="iFonteAtual">--A</div><div style="font-size:0.7rem; color:var(--text-muted)">Consumo instantâneo</div></div>
+        <div class="metric-card"><div class="metric-label">Temperatura Fonte</div><div class="metric-value" id="tempFonteAtual">--°C</div><div style="font-size:0.7rem; color:var(--text-muted)">Sensor principal</div></div>
+        <div class="metric-card"><div class="metric-label">Temperatura MPU</div><div class="metric-value" id="tempMpuAtual">--°C</div><div style="font-size:0.7rem; color:var(--text-muted)">Módulo auxiliar</div></div>
+        <div class="metric-card"><div class="metric-label">Vibração Atual</div><div class="metric-value" id="vibracaoAtual">--</div><div style="font-size:0.7rem; color:var(--text-muted)">Eixo Z</div></div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-card"><div class="card-title">Saúde da Fonte</div><canvas id="chartGauge"></canvas></div>
+        <div class="card">
+          <div class="card-title">Status e Condição</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Health Score</span>
+              <span id="healthTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">-- %</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Vibração</span>
+              <span id="vibracaoTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">--</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Última Tensão</span>
+              <span id="tensaoTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">-- V</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Última Corrente</span>
+              <span id="correnteTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">-- A</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Temp. Fonte</span>
+              <span id="temperaturaTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">-- °C</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.025em;">Temp. MPU</span>
+              <span id="temperaturaMpuTexto" style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">-- °C</span>
+            </div>
+          </div>
+          <div id="statusBadges" style="display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+            <span id="statusBadgeSaude" class="status-badge status-none">SAÚDE: --</span>
+            <span id="statusBadgeTemperatura" class="status-badge status-none">TEMP: --</span>
+            <span id="statusBadgeVibracao" class="status-badge status-none">VIBRAÇÃO: --</span>
+            <!--<span id="statusBadgeCanal2" class="status-badge status-none">CANAL 2: --</span> -->
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-card wide"><div class="card-title">Tensão, Corrente e Potência</div><canvas id="chartEletrico"></canvas></div>
+        <div class="chart-card wide"><div class="card-title">Saúde da Fonte (%)</div><canvas id="chartHealth"></canvas></div>
+        <div class="chart-card wide"><div class="card-title">Temperaturas e Vibração</div><canvas id="chartAmbiente"></canvas></div>
+        <div class="chart-card wide"><div class="card-title">Carga %, Tensão Buck e Corrente ACS</div><canvas id="chartAuxiliar"></canvas></div>
+        <div class="chart-card wide"><div class="card-title">Status Booleanos</div><canvas id="chartStatus"></canvas></div>
+      </div>
+    </div>
+
+    <div id="content-history" style="display: none;">
+      <div class="card">
+        <div class="card-title" style="display: flex; justify-content: space-between;">
+          <span>Performance e Energia</span>
+          <div class="period-selector">
+            <button class="btn-time" onclick="setPeriod(1)">1h</button>
+            <button class="btn-time active" onclick="setPeriod(24)">24h</button>
+            <button class="btn-time" onclick="setPeriod(168)">7d</button>
+          </div>
+        </div>
+        <div style="height: 300px;"><canvas id="chartHistoryMain"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Diagnóstico Auxiliar</div>
+        <div style="height: 300px;"><canvas id="chartHistoryDiag"></canvas></div>
+      </div>
+      <div id="localHistoryTable" class="card"></div>
+    </div>
+
+    <div id="content-config" style="display: none;">
+      <div class="card">
+        <div class="card-title">Configurações de Conexão</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+          <div class="card">
+            <div class="card-title">Canal 1</div>
+            <div class="input-group"><label>ID</label><input type="text" id="channelId1" value="3347335" /></div>
+            <div class="input-group"><label>Key</label><input type="text" id="apiKey1" value="IAC26ULCA819YL2P" /></div>
+            <div class="input-group"><label>Registros</label><input type="number" id="results1" value="15" /></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Canal 2</div>
+            <div class="input-group"><label>ID</label><input type="text" id="channelId2" value="3347339" /></div>
+            <div class="input-group"><label>Key</label><input type="text" id="apiKey2" value="HG2WIW8IJXRRGCMO" /></div>
+            <div class="input-group"><label>Registros</label><input type="number" id="results2" value="15" /></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="content-admin" style="display: none;">
+      <div class="card" style="max-width: 400px; margin: 0 auto;">
+        <div class="card-title"><i data-lucide="user-plus"></i> Novo Usuário</div>
+        <div id="admin-alert" class="alert"></div>
+        <div class="input-group"><label>Usuário</label><input type="text" id="new-user"></div>
+        <div class="input-group" style="margin-bottom: 1.5rem;"><label>Senha</label><input type="password" id="new-pass"></div>
+        <button class="btn-primary" style="width:100%; justify-content:center;" onclick="handleRegister()">Salvar Usuário</button>
+      </div>
+    </div>
+
+    <div id="content-raw" style="display: none;">
+      <div class="card">
+        <div class="card-title">Dados Brutos - Canal 1</div>
+        <div id="tabela1"></div>
+      </div>
+      <div class="card" style="margin-top: 2rem;">
+        <div class="card-title">Dados Brutos - Canal 2</div>
+        <div id="tabela2"></div>
+      </div>
+    </div>
+    <footer style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+      Desenvolvido para o Projeto Integrador 5 - @2026
+    </footer>
+  </div>
+
+<script>
+  lucide.createIcons();
+  let charts = {}, autoAtualizacaoAtiva = false, intervaloAuto = null, currentHistoryPeriod = 24;
+  const INTERVALO_AUTO_MS = 20000;
+
+  const getHeaders = () => ({ 
+    'Content-Type': 'application/json', 
+    'Authorization': 'Bearer ' + localStorage.getItem('token') 
+  });
+
+  function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = 'login.html';
+      return;
+    }
+    document.body.style.display = 'block';
+    document.getElementById('currentUserDisplay').textContent = localStorage.getItem('user');
+    lerDadosCanais();
+    atualizarStatsLocal();
+  }
+
+  function handleLogout() { 
+    localStorage.clear(); 
+    window.location.href = 'login.html'; 
+  }
+
+  async function lerDadosCanais() {
+    try {
+      const c1 = document.getElementById("channelId1").value;
+      const k1 = document.getElementById("apiKey1").value;
+      const r1 = document.getElementById("results1").value;
+      const c2 = document.getElementById("channelId2").value;
+      const k2 = document.getElementById("apiKey2").value;
+      const r2 = document.getElementById("results2").value;
+
+      const [d1, d2] = await Promise.all([
+        fetch(`https://api.thingspeak.com/channels/${c1}/feeds.json?results=${r1}&api_key=${k1}`).then(r => r.json()),
+        fetch(`https://api.thingspeak.com/channels/${c2}/feeds.json?results=${r2}&api_key=${k2}`).then(r => r.json())
+      ]);
+
+      if(d1.feeds && d1.feeds.length > 0) {
+        montarGraficosCanal1(d1.feeds);
+        montarTabela(d1.feeds, "tabela1", { field1: "V Fonte", field2: "A Fonte", field3: "W Fonte", field4: "Carga%", field5: "V Buck", field6: "I ACS", field7: "Health", field8: "Slope" }, []);
+      }
+      if(d2.feeds && d2.feeds.length > 0) {
+        montarGraficosCanal2(d2.feeds);
+        montarTabela(d2.feeds, "tabela2", { field1: "T Fonte", field2: "T MPU", field3: "Vib", field4: "PGOOD", field5: "LM2596", field6: "ADC", field7: "TempOK", field8: "MPUOK" }, ["field4", "field5", "field6", "field7", "field8"]);
+      }
+
+      atualizarMetricas(d1.feeds || [], d2.feeds || []);
+      document.getElementById("ultimaAtualizacao").textContent = "Última Sincronização: " + new Date().toLocaleTimeString();
+      updateStatusBadgeUI("apiStatusCloud", "ok", "CLOUD: OK");
+      atualizarStatsLocal();
+    } catch (e) { 
+      console.error("Erro na leitura:", e);
+      updateStatusBadgeUI("apiStatusCloud", "err", "CLOUD: NoK"); 
+    }
+  }
+
+  function atualizarMetricas(f1, f2) {
+    const u1 = f1.length > 0 ? f1[f1.length - 1] : null;
+    const u2 = f2.length > 0 ? f2[f2.length - 1] : null;
+    
+    if (u1) {
+      const h = parseFloat(u1.field7 || 0);
+      const v = parseFloat(u1.field1 || 0);
+      const i = parseFloat(u1.field2 || 0);
+      
+      document.getElementById("healthAtual").textContent = h.toFixed(1) + "%";
+      document.getElementById("vFonteAtual").textContent = v.toFixed(2) + "V";
+      document.getElementById("iFonteAtual").textContent = i.toFixed(2) + "A";
+      
+      document.getElementById("healthTexto").textContent = h.toFixed(1) + " %";
+      document.getElementById("tensaoTexto").textContent = v.toFixed(2) + " V";
+      document.getElementById("correnteTexto").textContent = i.toFixed(2) + " A";
+      
+      document.getElementById("dataSensor").textContent = "Sensor (Cloud): " + new Date(u1.created_at).toLocaleString();
+      atualizarGauge(h);
+      
+      const diffSensor = (new Date() - new Date(u1.created_at)) / (1000 * 60);
+      updateStatusBadgeUI("apiStatusData", diffSensor < 15 ? "ok" : "err", `SENSOR: ${diffSensor < 15 ? 'OK' : 'OFFLINE'}`);
+      updateStatusBadgeUI("statusBadgeSaude", h >= 85 ? "ok" : h >= 60 ? "warn" : "err", `SAÚDE: ${h >= 85 ? 'BOA' : h >= 60 ? 'ATENÇÃO' : 'FALHA'}`);
+    }
+
+    if (u2) {
+      const tf = parseFloat(u2.field1 || 0);
+      const tm = parseFloat(u2.field2 || 0);
+      const vib = parseFloat(u2.field3 || 0);
+      
+      document.getElementById("tempFonteAtual").textContent = tf.toFixed(1) + "°C";
+      document.getElementById("tempMpuAtual").textContent = tm.toFixed(1) + "°C";
+      document.getElementById("vibracaoAtual").textContent = vib.toFixed(3);
+      
+      document.getElementById("temperaturaTexto").textContent = tf.toFixed(1) + " °C";
+      document.getElementById("temperaturaMpuTexto").textContent = tm.toFixed(1) + " °C";
+      document.getElementById("vibracaoTexto").textContent = vib.toFixed(3);
+      
+      updateStatusBadgeUI("statusBadgeTemperatura", tf < 45 ? "ok" : tf < 55 ? "warn" : "err", `TEMP: ${tf < 45 ? 'NORMAL' : tf < 55 ? 'ALTA' : 'CRÍTICA'}`);
+      updateStatusBadgeUI("statusBadgeVibracao", vib < 0.5 ? "ok" : vib < 1.5 ? "warn" : "err", `VIB: ${vib < 0.5 ? 'NORMAL' : vib < 1.5 ? 'ALERTA' : 'CRÍTICA'}`);
+      updateStatusBadgeUI("statusBadgeCanal2", "ok", "CANAL 2: ATIVO");
+    } else {
+      updateStatusBadgeUI("statusBadgeCanal2", "none", "CANAL 2: SEM DADOS");
+    }
+  }
+
+  async function atualizarStatsLocal() {
+    try {
+      const [rs, rl] = await Promise.all([
+        fetch('/api/stats', { headers: getHeaders() }),
+        fetch('/api/last', { headers: getHeaders() })
+      ]);
+      const s = await rs.json(), l = await rl.json();
+      document.getElementById('dbStats').textContent = `DB: ${s.total}`;
+      
+      if (l?.thingspeak_at) {
+        document.getElementById("dataSensorDB").textContent = "Sensor (no DB): " + new Date(l.thingspeak_at).toLocaleString();
+        
+        const cloudLabel = document.getElementById("dataSensor").textContent;
+        if (cloudLabel.includes(": ")) {
+            const cloudDateStr = cloudLabel.split(": ")[1];
+            const cloudTime = new Date(cloudDateStr).getTime();
+            const dbTime = new Date(l.thingspeak_at).getTime();
+            const synced = Math.abs(cloudTime - dbTime) < 10000; 
+            updateStatusBadgeUI("apiStatusLocal", synced ? "ok" : "warn", `SYNC: ${synced ? 'OK' : 'PENDING'}`);
+        }
+      }
+    } catch (e) { updateStatusBadgeUI("apiStatusLocal", "err", "SYNC: NoK"); }
+  }
+
+  function updateStatusBadgeUI(id, type, text) { 
+    const el = document.getElementById(id); 
+    if (el) { el.className = `status-badge status-${type}`; el.textContent = text; } 
+  }
+
+  function atualizarGauge(val) {
+    const ctx = document.getElementById("chartGauge");
+    if (charts.gauge) charts.gauge.destroy();
+    
+    charts.gauge = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        datasets: [{
+          data: [val, 100 - val],
+          backgroundColor: [val >= 85 ? "#22c55e" : val >= 60 ? "#f59e0b" : "#ef4444", "#f1f5f9"],
+          circumference: 180,
+          rotation: 270,
+          cutout: "75%",
+          borderWidth: 0
+        }]
+      },
+      options: {
+        aspectRatio: 1.8,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false }
+        }
+      },
+      plugins: [{
+        id: 'gaugeText',
+        afterDraw: (chart) => {
+          const { ctx, width, height } = chart;
+          ctx.save();
+          const fontSize = (height / 120).toFixed(2);
+          ctx.font = `bold ${fontSize}em Inter`;
+          ctx.textBaseline = "middle";
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#1e293b";
+          ctx.fillText(`${val.toFixed(1)}%`, width / 2, height / 1.4);
+          ctx.font = `600 ${(fontSize/2.2)}em Inter`;
+          ctx.fillStyle = "#64748b";
+          ctx.fillText("HEALTH SCORE", width / 2, height / 1.1);
+          ctx.restore();
+        }
+      }]
+    });
+  }
+
+  function criarGraficoLinha(canvasId, labels, datasets, yMin = null, yMax = null) {
+    if (charts[canvasId]) charts[canvasId].destroy();
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
+    
+    charts[canvasId] = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: datasets.map(ds => ({
+          ...ds,
+          borderWidth: 2,
+          tension: 0.2,
+          fill: ds.fill || false,
+          pointRadius: 2,
+          pointHoverRadius: 4
+        }))
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: { display: true, labels: { boxWidth: 12, font: { size: 11 } } }
+        },
+        scales: {
+          y: {
+            beginAtZero: yMin === 0,
+            min: yMin,
+            max: yMax,
+            ticks: { font: { size: 10 } }
+          },
+          x: {
+            ticks: { font: { size: 10 } }
+          }
+        }
+      }
+    });
+    return charts[canvasId];
+  }
+
+  function montarGraficosCanal1(feeds) {
+    const labels = feeds.map(f => new Date(f.created_at).toLocaleTimeString());
+    
+    // Gráfico de Saúde
+    criarGraficoLinha("chartHealth", labels, [
+      { label: "Health Score (%)", data: feeds.map(f => f.field7), borderColor: "#1e88e5", backgroundColor: "rgba(30, 136, 229, 0.1)", fill: true }
+    ], 0, 100);
+
+    // Gráfico Elétrico (Tensão, Corrente, Potência)
+    criarGraficoLinha("chartEletrico", labels, [
+      { label: "Tensão Fonte (V)", data: feeds.map(f => f.field1), borderColor: "#1e88e5" },
+      { label: "Corrente Fonte (A)", data: feeds.map(f => f.field2), borderColor: "#43a047" },
+      { label: "Potência Fonte (W)", data: feeds.map(f => f.field3), borderColor: "#fb8c00" }
+    ]);
+
+    // Gráfico Auxiliar (Carga, Buck, ACS)
+    criarGraficoLinha("chartAuxiliar", labels, [
+      { label: "Carga Percentual (%)", data: feeds.map(f => f.field4), borderColor: "#8e24aa" },
+      { label: "Tensão Buck (V)", data: feeds.map(f => f.field5), borderColor: "#00897b" },
+      { label: "Corrente ACS (A)", data: feeds.map(f => f.field6), borderColor: "#e53935" }
+    ]);
+  }
+
+  function montarGraficosCanal2(feeds) {
+    const labels = feeds.map(f => new Date(f.created_at).toLocaleTimeString());
+    
+    // Gráfico Ambiente (Temperaturas e Vibração)
+    criarGraficoLinha("chartAmbiente", labels, [
+      { label: "Temp. Fonte (C)", data: feeds.map(f => f.field1), borderColor: "#1e88e5" },
+      { label: "Temp. MPU (C)", data: feeds.map(f => f.field2), borderColor: "#43a047" },
+      { label: "Vibração (m/s2)", data: feeds.map(f => f.field3), borderColor: "#fb8c00" }
+    ]);
+
+    // Gráfico Status Booleanos
+    criarGraficoLinha("chartStatus", labels, [
+      { label: "Fonte PGOOD", data: feeds.map(f => f.field4), borderColor: "#1e88e5" },
+      { label: "LM2596 CC", data: feeds.map(f => f.field5), borderColor: "#e53935" },
+      { label: "ADC OK", data: feeds.map(f => f.field6), borderColor: "#43a047" },
+      { label: "Temp OK", data: feeds.map(f => f.field7), borderColor: "#8e24aa" },
+      { label: "MPU OK", data: feeds.map(f => f.field8), borderColor: "#fb8c00" }
+    ], 0, 1.2);
+  }
+
+  function alternarAutoAtualizacao() {
+    autoAtualizacaoAtiva = !autoAtualizacaoAtiva;
+    const btn = document.getElementById("btnAuto");
+    const statusTxt = document.getElementById("statusAuto");
+    
+    if (autoAtualizacaoAtiva) { 
+      btn.innerHTML = '<i data-lucide="pause"></i>'; 
+      statusTxt.textContent = "Automático";
+      statusTxt.style.color = "var(--success)";
+      lerDadosCanais(); 
+      intervaloAuto = setInterval(lerDadosCanais, INTERVALO_AUTO_MS); 
+    } else { 
+      btn.innerHTML = '<i data-lucide="refresh-cw"></i>'; 
+      statusTxt.textContent = "Manual";
+      statusTxt.style.color = "var(--text-muted)";
+      clearInterval(intervaloAuto); 
+    }
+    lucide.createIcons();
+  }
+
+  async function handleRegister() {
+    const user = document.getElementById('new-user').value, pass = document.getElementById('new-pass').value, alertEl = document.getElementById('admin-alert');
+    try {
+      const r = await fetch('/api/register', { method: 'POST', headers: getHeaders(), body: JSON.stringify({ username: user, password: pass }) });
+      const d = await r.json();
+      alertEl.style.display = 'block'; alertEl.className = r.ok ? "alert alert-success" : "alert alert-error"; alertEl.textContent = r.ok ? d.message : d.error;
+    } catch (e) { alertEl.className = "alert alert-error"; alertEl.textContent = "Erro"; }
+  }
+
+  function setPeriod(h) { currentHistoryPeriod = h; carregarHistoricoLocal(); }
+
+  function montarTabela(feeds, tabelaId, nomes, booleanos) {
+    const div = document.getElementById(tabelaId); 
+    if (!div) return;
+    if (!feeds || !feeds.length) {
+      div.innerHTML = "<p style='padding:1rem; color:var(--text-muted)'>Sem dados para exibir.</p>";
+      return;
+    }
+    let html = "<table><thead><tr><th>Hora</th>";
+    const campos = Object.keys(feeds[0]).filter(k => k.startsWith("field"));
+    campos.forEach(c => html += `<th>${nomes[c] || c}</th>`);
+    html += "</tr></thead><tbody>";
+    feeds.forEach(f => {
+      html += `<tr><td>${new Date(f.created_at).toLocaleTimeString()}</td>`;
+      campos.forEach(c => {
+        let v = f[c] ?? "-"; if (booleanos && booleanos.includes(c)) v = (v == "1") ? "ON" : "OFF";
+        html += `<td>${v}</td>`;
+      });
+      html += "</tr>";
+    });
+    div.innerHTML = html + "</tbody></table>";
+  }
+
+  function montarGraficoReal(feeds) {
+    const ctx = document.getElementById('chartEletrico');
+    if (!ctx) return;
+    if (charts.real) charts.real.destroy();
+    charts.real = new Chart(ctx, { 
+      type: 'line', 
+      data: { 
+        labels: feeds.map(f => new Date(f.created_at).toLocaleTimeString()), 
+        datasets: [
+          { label: 'V Fonte', data: feeds.map(f => f.field1), borderColor: '#10b981', tension: 0.3, pointRadius: 0 },
+          { label: 'A Fonte', data: feeds.map(f => f.field2), borderColor: '#3b82f6', tension: 0.3, pointRadius: 0 },
+          { label: 'W Fonte', data: feeds.map(f => f.field3), borderColor: '#f59e0b', tension: 0.3, pointRadius: 0 }
+        ] 
+      }, 
+      options: { responsive: true, maintainAspectRatio: false } 
+    });
+  }
+
+  function switchTab(t) {
+    ['dashboard', 'history', 'raw', 'config', 'admin'].forEach(id => { 
+      const el = document.getElementById('content-' + id);
+      const btn = document.getElementById('tab-' + id);
+      if (el) el.style.display = id === t ? 'block' : 'none'; 
+      if (btn) btn.classList.toggle('active', id === t); 
+    });
+    if (t === 'history') carregarHistoricoLocal();
+  }
+
+  async function carregarHistoricoLocal() {
+    const div = document.getElementById('localHistoryTable'); 
+    if (!div) return;
+    div.innerHTML = "Buscando histórico...";
+    try {
+      const r = await fetch(`/api/history?hours=${currentHistoryPeriod}`, { headers: getHeaders() });
+      const data = await r.json();
+      updateStatusBadgeUI("apiStatusLocal", "ok", "LOCAL: OK");
+      let html = "<table><thead><tr><th>Hora</th><th>V Fonte</th><th>Saúde</th></tr></thead><tbody>";
+      data.slice(0, 15).forEach(row => { 
+        html += `<tr><td>${new Date(row.thingspeak_at).toLocaleString()}</td><td>${row.v_fonte?.toFixed(2)}V</td><td>${row.health?.toFixed(1)}%</td></tr>`; 
+      });
+      div.innerHTML = html + "</tbody></table>";
+      renderizarGraficosHistoricos(data.reverse());
+    } catch (e) { updateStatusBadgeUI("apiStatusLocal", "err", "LOCAL: NoK"); }
+  }
+
+  function renderizarGraficosHistoricos(data) {
+    const labels = data.map(r => new Date(r.thingspeak_at).toLocaleTimeString());
+    const cfg = (label, key, color) => ({ label, data: data.map(r => r[key]), borderColor: color, tension: 0.3, pointRadius: 0 });
+    const ctxMain = document.getElementById('chartHistoryMain');
+    const ctxDiag = document.getElementById('chartHistoryDiag');
+    
+    if (ctxMain) {
+      if (charts.hMain) charts.hMain.destroy();
+      charts.hMain = new Chart(ctxMain, { type: 'line', data: { labels, datasets: [cfg('Saúde %', 'health', '#1a73e8'), cfg('V Fonte', 'v_fonte', '#10b981')] }, options: { responsive: true, maintainAspectRatio: false } });
+    }
+    if (ctxDiag) {
+      if (charts.hDiag) charts.hDiag.destroy();
+      charts.hDiag = new Chart(ctxDiag, { type: 'line', data: { labels, datasets: [cfg('V Buck', 'v_buck', '#06b6d4'), cfg('Vibração', 'vibracao', '#6366f1')] }, options: { responsive: true, maintainAspectRatio: false } });
+    }
+  }
+</script>
+</body>
+</html>

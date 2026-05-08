@@ -1,0 +1,62 @@
+---
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-p5
+    volumes:
+      - ./:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - lab-net
+
+  backend:
+    build: ./backend
+    container_name: backend-p5
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - THINGSPEAK_CH1=${THINGSPEAK_CH1}
+      - THINGSPEAK_KEY1=${THINGSPEAK_KEY1}
+      - THINGSPEAK_CH2=${THINGSPEAK_CH2}
+      - THINGSPEAK_KEY2=${THINGSPEAK_KEY2}
+    restart: unless-stopped
+    depends_on:
+      - db
+    networks:
+      - lab-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: db-p5
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - lab-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-p5
+    command: tunnel run
+    volumes:
+      - ./cloudflared:/etc/cloudflared
+    depends_on:
+      - nginx
+    restart: unless-stopped
+    networks:
+      - lab-net
+
+networks:
+  lab-net:
+    driver: bridge
+
+volumes:
+  db-data:

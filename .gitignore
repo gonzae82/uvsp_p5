@@ -1,0 +1,6 @@
+Gemini.md
+Gemini-*.log
+Gemini-*.log.*
+cloudflared/
+.env
+node_modules/

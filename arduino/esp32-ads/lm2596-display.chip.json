@@ -1,0 +1,60 @@
+{
+  "name": "Step-down (Buck)",
+  "author": "Wilton",
+  "pins": [
+    "VIN",
+    "GND",
+    "VOUT",
+    "VMON",
+    "IMON",
+    "CC", 
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "controls": [
+    {
+      "id": "vinVolts",
+      "label": "Vin (V)",
+      "type": "range",
+      "min": 0,
+      "max": 30,
+      "step": 0.1
+    },
+    {
+      "id": "vsetVolts",
+      "label": "Vset (V)",
+      "type": "range",
+      "min": 0,
+      "max": 30,
+      "step": 0.1
+    },
+    {
+      "id": "loadCurrentA",
+      "label": "Load (A)",
+      "type": "range",
+      "min": 0,
+      "max": 10,
+      "step": 0.1
+    },
+    {
+      "id": "currentLimitA",
+      "label": "Current Limit (A)",
+      "type": "range",
+      "min": 0,
+      "max": 10,
+      "step": 0.1
+    },
+    {
+      "id": "powerOn",
+      "label": "Power On (0/1)",
+      "type": "range",
+      "min": 0,
+      "max": 1,
+      "step": 1
+    }
+  ]
+}
